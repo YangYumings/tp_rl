@@ -1,16 +1,17 @@
-import argparse
-import pandas as pd
-import numpy as np
-import math
 import os
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)   # 全局忽略 FutureWarning
+os.environ["PYTHONWARNINGS"] = "ignore"                     # 对子进程也生效
+
+import argparse
+import math
 from datetime import datetime
 from statistics import mean
 
 
 from TPAgentUtil import TPAgentUtil
 from PairWiseEnv import CIPairWiseEnv
-from TPPairWiseDQNAgent import TPPairWiseDQNAgent
-from ci_cycle import CICycleLog
 from Config import Config
 from TestcaseExecutionDataLoader import TestCaseExecutionDataLoader
 from CustomCallback import  CustomCallback
@@ -20,6 +21,9 @@ from CIListWiseEnvMultiAction import CIListWiseEnvMultiAction
 from CIListWiseEnv import CIListWiseEnv
 from PointWiseEnv import CIPointWiseEnv
 import sys
+import os, tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)   # 只报 Error
 
 def train(trial, model):
     pass
