@@ -12,10 +12,13 @@ class CIPointWiseEnv(gym.Env):
     def __init__(self, cycle_logs: CICycleLog, conf: Config):
         super(CIPointWiseEnv, self).__init__()
         self.conf = conf
+        # 奖励范围
         self.reward_range = (-1, 1)
         self.cycle_logs = cycle_logs
+        # 测试用例概率
         self.test_cases_vector_prob = []
         self.current_index = 0
+        # 获取最优测试用例排序顺序
         self.optimal_order= cycle_logs.get_optimal_order()
         self.testcase_vector_size = self.cycle_logs.get_test_case_vector_length(cycle_logs.test_cases[0],self.conf.win_size)
         self.current_obs = np.zeros((1, self.testcase_vector_size))
