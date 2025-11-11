@@ -1,9 +1,12 @@
 import pandas as pd
 import statistics
+# 计算 多轮排序/CI 结果的 平均值
+# 从一个文本文件中读取 每轮CI 的结果，然后逐个周期计算准确度
 
 def calc_nrpa(cycle_data):
     return 0
 
+# 排名越靠前，权重越高
 def calc_score_ranking(ranks: list):
     if not ranks:
         return 0
@@ -18,6 +21,8 @@ def get_optimal_RPA(n:int):
     else:
         return (n*n) + get_optimal_RPA(n-1)
 
+# 这个文件存储的是  第几轮CI  实际排序  预测排序
+# todo 文件找不到
 if __name__ == '__main__':
     results = pd.read_csv(r"../data/langScore_1_ranker0.txt", sep='\t',
                       names = ["cycle_id", "rank", "assigned_rank"])

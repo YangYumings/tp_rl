@@ -1,5 +1,6 @@
 import os
 import warnings
+import PrintData
 
 warnings.filterwarnings("ignore", category=FutureWarning)  # 全局忽略 FutureWarning
 os.environ["PYTHONWARNINGS"] = "ignore"  # 对子进程也生效
@@ -53,17 +54,20 @@ def get_max_test_cases_count(cycle_logs: []):
 
 
 # 最核心的代码
-#
 def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, model_path, dataset_name, conf,
                verbos=False):
     # 日志文件初始化
     log_dir = os.path.dirname(conf.log_file)
+    # TODO(解决) 打印日志的路径，看为什么数据输出的文件夹不对。相对地址与bash中的路径相关，切换路径即可解决问题。
+    # print(conf.log_file)
+    # print(log_dir)
+
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     if start_cycle <= 0:
         start_cycle = 0
 
-    # CI 周期数检查
+    # 解决越界问题，当 end_cycle 大于真实CI总数时
     if end_cycle >= len(test_case_data) - 1:
         end_cycle = len(test_case_data)
 
@@ -78,21 +82,26 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
         first_round = False
         previous_model_path = model_path + "/" + mode + "_" + algo + dataset_name + "_" + str(
             0) + "_" + str(start_cycle - 1)
-    # 评估指标标准
+    # 评估指标标准 APFD、NRPA
     model_save_path = None
     apfds = []
     nrpas = []
+    # 使用 [start_cycle, end_cycle] 训练数据
     for i in range(start_cycle, end_cycle - 1):
         # 跳过测试用例少于6个或在测试用例数少于6个时跳过
+        # TODO 为什么要测试用例数少于6个？
         if (test_case_data[i].get_test_cases_count() < 6) or \
                 ((conf.dataset_type == "simple") and
                  (test_case_data[i].get_failed_test_cases_count() < 1)):
             continue
         # 创造相应的环境
         if mode.upper() == 'PAIRWISE':
-            # 每个周期内测试用例总数、步数
+            # 每个周期内测试用例总数、步数， 测试用例越多需要训练的步数越多，而log的增长逐渐下降
+            # Episode 从初始状态到终止状态的一次交互
+            # step 单次交互，智能体观察-执行动作-环境返回奖励
             N = test_case_data[i].get_test_cases_count()
             steps = int(episodes * (N * (math.log(N, 2) + 1)))
+            # TODO 环境
             env = CIPairWiseEnv(test_case_data[i], conf)
         elif mode.upper() == 'POINTWISE':
             N = test_case_data[i].get_test_cases_count()
@@ -115,6 +124,7 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
             previous_model_path = model_save_path
         model_save_path = model_path + "/" + mode + "_" + algo + dataset_name + "_" + str(
             start_cycle) + "_" + str(i)
+
         # 设置监视器和自定义回调函数（自动保存更好的模型参数）
         env = Monitor(env, model_save_path + "_monitor.csv")
         callback_class = CustomCallback(svae_path=model_save_path,
@@ -122,19 +132,22 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
 
         # 创建代理 + 一轮训练，记录训练开始和结束时间
         if first_round:
+            # 第一次训练，根据算法与环境创建代理
             tp_agent = TPAgentUtil.create_model(algo, env)
             training_start_time = datetime.now()
+            # TODO 训练
             tp_agent.learn(total_timesteps=steps, reset_num_timesteps=True, callback=callback_class)
             training_end_time = datetime.now()
             first_round = False
         else:
+            # 使用上一次训练后的模型参数
             tp_agent = TPAgentUtil.load_model(algo=algo, env=env, path=previous_model_path + ".zip")
             training_start_time = datetime.now()
             tp_agent.learn(total_timesteps=steps, reset_num_timesteps=True, callback=callback_class)
             training_end_time = datetime.now()
         print("Training agent with replaying of cycle " + str(i) + " is finished")
 
-        # 下一个测试周期，跳过用例少于6个
+        # 下一个CI周期，跳过用例少于6个
         j = i + 1
         while (((test_case_data[j].get_test_cases_count() < 6)
                 or ((conf.dataset_type == "simple") and (test_case_data[j].get_failed_test_cases_count() == 0)))
@@ -155,10 +168,13 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
 
         # 预测的起始和结束时间
         test_time_start = datetime.now()
+        # 预测
         test_case_vector = TPAgentUtil.test_agent(env=env_test, algo=algo, model_path=model_save_path + ".zip",
                                                   mode=mode)
         test_time_end = datetime.now()
         test_case_id_vector = []
+
+        # TODO 记录日志的修改
         # 提取测试用例ID和周期ID
         # 计算评估指标：APFD（Average Percentage of Faults Detected）、NRPA（Normalized Rank Position Average）
         for test_case in test_case_vector:
@@ -204,6 +220,8 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
 
         log_file.flush()
         log_file_test_cases.flush()
+
+
     # 关闭文件
     log_file.close()
     log_file_test_cases.close()
@@ -250,6 +268,10 @@ if __name__ == '__main__':
     supported_formalization = ['PAIRWISE', 'POINTWISE', 'LISTWISE', 'LISTWISE2']
     supported_algo = ['DQN', 'PPO2', "A2C", "ACKTR", "DDPG", "ACER", "GAIL", "HER", "PPO1", "SAC", "TD3", "TRPO"]
     args = parser.parse_args()
+
+    # TODO 观察所有参数的值，字典格式
+    print(vars(args))
+
     assert supported_formalization.count(args.mode.upper()) == 1, "The formalization mode is not set correctly"
     assert supported_algo.count(args.algo.upper()) == 1, "The formalization mode is not set correctly"
 
@@ -284,12 +306,17 @@ if __name__ == '__main__':
         conf.log_file = conf.output_path + args.mode + "_" + args.algo + "_" + \
                         conf.dataset_name + "_" + args.episodes + "_" + str(conf.win_size) + "_log.txt"
 
+    # todo 验证前面 CI 周期号是否能指定训练集大小
     # 数据加载，扫描CSV文件，为每个CI周期构建一个CICycleLog，存储其周期内每个测试用例的所有特征
     test_data_loader = TestCaseExecutionDataLoader(conf.train_data, args.dataset_type)
     test_data = test_data_loader.load_data()
     ci_cycle_logs = test_data_loader.pre_process()
 
-    # 输出预处理后数据集信息
+    # TODO 查看数据格式      Cycle 0: 1, Test cases: 6
+    # PrintData.print_ci_cycle_logs(ci_cycle_logs)
+    # sys.exit()
+
+    # 输出预处理后数据集信息， 每轮 CI 的相关测试用例数，失败率等
     reportDatasetInfo(test_case_data=ci_cycle_logs)
 
     # 训练

@@ -27,7 +27,6 @@ class TestCaseExecutionDataLoader:
         self.test_data = None
 
     def load_data(self):
-        #
         last_results = []
         # CI 周期数
         cycle_ids = []
