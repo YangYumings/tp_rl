@@ -12,18 +12,19 @@ class CustomCallback(BaseCallback):
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
 
-    def __init__(self, svae_path: str, check_freq: int, log_dir: str, verbose=1):
+    def __init__(self, save_path: str, check_freq: int, log_dir: str, verbose=1):
         super(CustomCallback, self).__init__(verbose)
         self.check_freq = check_freq
         self.log_dir = log_dir
-        self.save_path = svae_path
+        self.save_path = save_path
         self.best_mean_reward = -np.inf
         self.plateau_cnt = 0
 
     def _init_callback(self) -> None:
         # Create folder if needed
-        if self.save_path is not None:
-            os.makedirs(self.save_path, exist_ok=True)
+        # if self.save_path is not None:
+        #     os.makedirs(self.save_path, exist_ok=True)
+        pass
 
     def _on_step(self) -> bool:
         #print(self.n_calls)

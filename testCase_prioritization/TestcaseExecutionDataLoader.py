@@ -72,6 +72,7 @@ class TestCaseExecutionDataLoader:
             self.test_data = df
         return self.test_data
 
+    # 数据保存在内存中
     def pre_process(self):
         # 查找数据中最小和最大的构建周期(Cycle)
         min_cycle = min(self.test_data["Cycle"])

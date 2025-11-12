@@ -120,14 +120,25 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
         print("Training agent with replaying of cycle " + str(i) + " with steps " + str(steps))
 
         # 更新前置模型保存位置，当前模型保存位置
+        # TODO(未解决) model_path、conf.output_path、model_save_path 混用，不清晰
+        '''
+        model_path ： ../experiments/pointwise/A2C/paintcontrol-additional-features_4/pointwise_A2C_0_7.zip
+        conf.output_path  =  model_path = '../experiments/pointwise/A2C/paintcontrol-additional-features_4/'
+        model_save_path = ../experiments/pointwise/A2C/paintcontrol-additional-features_4/pointwise_A2C_0_7
+        log_dir = '../experiments/pointwise/A2C/paintcontrol-additional-features_4/pointwise_A2C_paintcontrol-additional-features_10_4_log.txt'
+        '''
         if model_save_path:
             previous_model_path = model_save_path
-        model_save_path = model_path + "/" + mode + "_" + algo + dataset_name + "_" + str(
+        model_save_path = model_path + mode + "_" + algo + dataset_name + "_" + str(
             start_cycle) + "_" + str(i)
 
         # 设置监视器和自定义回调函数（自动保存更好的模型参数）
+        '''
+        记录三大指标：
+        累计奖励、episode长度、耗时
+        '''
         env = Monitor(env, model_save_path + "_monitor.csv")
-        callback_class = CustomCallback(svae_path=model_save_path,
+        callback_class = CustomCallback(save_path=model_save_path,
                                         check_freq=int(steps / episodes), log_dir=log_dir, verbose=verbos)
 
         # 创建代理 + 一轮训练，记录训练开始和结束时间
@@ -168,7 +179,7 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
 
         # 预测的起始和结束时间
         test_time_start = datetime.now()
-        # 预测
+        # 预测 sorted_test_case.csv 保存预测的顺序
         test_case_vector = TPAgentUtil.test_agent(env=env_test, algo=algo, model_path=model_save_path + ".zip",
                                                   mode=mode)
         test_time_end = datetime.now()
@@ -192,6 +203,10 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
         nrpa = test_case_data[j].calc_NRPA_vector(test_case_vector)
         nrpas.append(nrpa)
         # 记录训练和预测时间 + 打印日志 + 写入日志文件
+        '''
+        主日志文件 log_file：每轮CI： 时间戳、模式、算法、episodes、step、NRPA、APFD、失败测试总数、测试用例数
+        log_file_test_cases：排序后的测试用例ID列表
+        '''
         test_time = millis_interval(test_time_start, test_time_end)
         training_time = millis_interval(training_start_time, training_end_time)
         print("Testing agent  on cycle " + str(j) +
@@ -220,7 +235,6 @@ def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, mod
 
         log_file.flush()
         log_file_test_cases.flush()
-
 
     # 关闭文件
     log_file.close()
@@ -310,9 +324,9 @@ if __name__ == '__main__':
     # 数据加载，扫描CSV文件，为每个CI周期构建一个CICycleLog，存储其周期内每个测试用例的所有特征
     test_data_loader = TestCaseExecutionDataLoader(conf.train_data, args.dataset_type)
     test_data = test_data_loader.load_data()
-    ci_cycle_logs = test_data_loader.pre_process()
+    ci_cycle_logs = test_data_loader.pre_process()  # 数据预处理
 
-    # TODO 查看数据格式      Cycle 0: 1, Test cases: 6
+    # TODO 查看数据格式  列表 + 字典    Cycle 0: 1, Test cases: 6
     # PrintData.print_ci_cycle_logs(ci_cycle_logs)
     # sys.exit()
 
