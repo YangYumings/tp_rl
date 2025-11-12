@@ -19,15 +19,16 @@ class CIPointWiseEnv(gym.Env):
         self.test_cases_vector_prob = []
         self.current_index = 0
         # 获取最优测试用例排序顺序
-        self.optimal_order= cycle_logs.get_optimal_order()
-        self.testcase_vector_size = self.cycle_logs.get_test_case_vector_length(cycle_logs.test_cases[0],self.conf.win_size)
+        self.optimal_order = cycle_logs.get_optimal_order()
+        self.testcase_vector_size = self.cycle_logs.get_test_case_vector_length(cycle_logs.test_cases[0],
+                                                                                self.conf.win_size)
         self.current_obs = np.zeros((1, self.testcase_vector_size))
         self.initial_observation = self.get_point_data(self.current_index)
         self.current_obs = self.initial_observation.copy()
 
         # self.number_of_actions = len(self.cycle_logs.test_cases)
-        #self.action_space = spaces.discrete()
-        self.action_space = spaces.Box(low=0, high=1, shape=(1, ))
+        # self.action_space = spaces.discrete()
+        self.action_space = spaces.Box(low=0, high=1, shape=(1,))
         self.observation_space = spaces.Box(low=0, high=1,
                                             shape=(1, self.testcase_vector_size))  # ID, execution time and LastResults
 
@@ -54,13 +55,25 @@ class CIPointWiseEnv(gym.Env):
     def _initial_obs(self):
         return self.initial_observation
 
-    ## the reward function must be called before updating the observation
+    # the reward function must be called before updating the observation
+    '''
+    最优排序的标准：
+        1.故障检测优先；按照 verdict 降序排序
+        2.执行时间最短；对失败的测试用例，按照 last_exec_time 升序排序。通过的测试用例同方法排序
+        3.历史失败率；
+        4.其他指标：暂时作者没有其他的指标
+    '''
+
     def _calculate_reward(self, test_case_prob):
         test_case_prob = test_case_prob[0]
-        optimal_rank= self.optimal_order.index(self.cycle_logs.test_cases[self.current_index])
-        normalized_optimal_rank=optimal_rank/self.cycle_logs.get_test_cases_count()
-        reward = 1 - (test_case_prob-normalized_optimal_rank)**2
+        # 最优排序
+        optimal_rank = self.optimal_order.index(self.cycle_logs.test_cases[self.current_index])
+        # 最优排序归一化
+        normalized_optimal_rank = optimal_rank / self.cycle_logs.get_test_cases_count()
+        # 平方误差的负值
+        reward = 1 - (test_case_prob - normalized_optimal_rank) ** 2
         return reward
+
     def _calculate_reward_old1(self, test_case_prob):
         test_case_prob = test_case_prob[0]
         if self.cycle_logs.test_cases[self.current_index]['verdict']:

@@ -54,6 +54,9 @@ def get_max_test_cases_count(cycle_logs: []):
 
 
 # 最核心的代码
+# episodes控制每个 CI 中智能体和环境完整交互的次数，也就是控制智能体的训练强度
+# step 控制每个动作后，环境的反馈
+# end_cycle - start_cycle 控制训练的 CI 数，每个CI周期代表一次独立的训练-测试过程
 def experiment(mode, algo, test_case_data, start_cycle, end_cycle, episodes, model_path, dataset_name, conf,
                verbos=False):
     # 日志文件初始化

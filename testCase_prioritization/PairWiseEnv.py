@@ -120,7 +120,8 @@ class CIPairWiseEnv(gym.Env):
             reward = 0
         return reward
 
-    ## simple  data set
+    ## simple  data s
+    # et
     def _calculate_reward_simple(self, test_case_index):
         if test_case_index == 0:
             selected_test_case = self.test_cases_vector[self.current_indexes[0]]
