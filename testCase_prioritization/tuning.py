@@ -1,4 +1,5 @@
 import optuna
+# 自动化超参数优化工具
 
 def objective(trial):
     x = trial.suggest_uniform('x', -10, 10)

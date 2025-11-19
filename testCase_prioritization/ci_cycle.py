@@ -2,6 +2,7 @@ import numpy as np
 from sklearn import preprocessing
 import random
 import copy
+# 用于输出每个 CI 周期的记录，理解为日志
 
 class CICycleLog:
     test_cases = {}
@@ -123,7 +124,7 @@ class CICycleLog:
             extra_length = extra_length + len(test_case['other_metrics'])
 
         return win_size + extra_length
-
+    # 基于预测概率计算 APFD
     def calc_APFD_vector_porb(self, test_case_vector_prob: list, threshold: float):
         sum_ranks: float = 0
         apfd: float = 0
@@ -138,6 +139,7 @@ class CICycleLog:
             apfd = 1 - (sum_ranks / (N * M)) + (1 / (2 * N))
         return apfd
 
+    # 基于给定排序（已知先后顺序）计算 APFD
     def calc_APFD_ordered_vector(self, test_case_vector: list):
         sum_ranks: float = 0
         apfd: float = 0
@@ -151,12 +153,15 @@ class CICycleLog:
             apfd = 1 - (sum_ranks / (N * M)) + (1 / (2 * N))
         return apfd
 
+    # 生成最优排序
     def get_optimal_order(self):
         optimal_order_by_verdict = copy.deepcopy(sorted(self.test_cases, key=lambda x: x['verdict'], reverse=True))
         optimal_order = []
         optimal_order.extend(sorted(optimal_order_by_verdict[0:self.get_failed_test_cases_count()], key=lambda x: x['last_exec_time']))
         optimal_order.extend(sorted(optimal_order_by_verdict[self.get_failed_test_cases_count():], key=lambda x: x['last_exec_time']))
         return optimal_order
+
+    # 计算 RPA
     def calc_RPA_vector(self, test_case_vector: list):
         ranks = []
         optimal_order = self.get_optimal_order()
@@ -165,11 +170,13 @@ class CICycleLog:
             ranks.append(self.get_test_cases_count() - optimal_order.index(test_case))
         return self.calc_score_ranking(ranks)
 
+    # 计算归一化的 RPA
     def calc_NRPA_vector(self,test_case_vector: list):
         RPA = self.calc_RPA_vector(test_case_vector)
         ORPA = self.get_optimal_RPA(self.get_test_cases_count())
         return RPA/ORPA
 
+    # 计算排名分数
     def calc_score_ranking(self, ranks: list):
         if not ranks:
             return 0
@@ -195,6 +202,7 @@ class CICycleLog:
             apfd = 1 - (sum_ranks / (N * M)) + (1 / (2 * N))
         return apfd
 
+    # 生成随机排序的 APFD
     def calc_random_APFD(self):
         random_order = []
         while len(random_order) < self.get_test_cases_count():
@@ -204,6 +212,7 @@ class CICycleLog:
         random_apfd = self.calc_APFD(random_order)
         return random_apfd
 
+    # 计算最优排序下的 APFD 值
     def calc_optimal_APFD(self):
         optimal_order = sorted(self.test_cases, key=lambda x: x['verdict'], reverse=True)
         sum_ranks = 0
@@ -218,6 +227,7 @@ class CICycleLog:
             apfd = 1 - (sum_ranks / (N * M)) + (1 / (2 * N))
         return apfd
 
+    # 失败测试用例总数
     def get_failed_test_cases_count(self):
         cnt = 0
         for test_case in self.test_cases:
@@ -225,6 +235,7 @@ class CICycleLog:
                 cnt = cnt + 1
         return cnt
 
+    # 测试用例总数
     def get_test_cases_count(self) -> object:
         return len(self.test_cases)
 

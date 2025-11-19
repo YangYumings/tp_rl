@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # Reads test suite information from google-shared-dataset-test-suite-results
 # and creates a csv file usable by RETECS.
+# 读取 GSDTSR 数据集，并将其转换未 RETECS 输入的数据格式
 from __future__ import division, print_function
 from datetime import datetime, timedelta
 import csv
@@ -12,8 +13,11 @@ import gzip
 
 
 def convert_gsdtsr(filename):
+    # basedate 是数据集中最小的日期，而后续的日期都是基于此日期加上偏移得到的 datatime类型数据。
+    # ['Id', 'Name', 'Duration', 'CalcPrio', 'LastRun', 'LastResults', 'Verdict', 'Cycle']
     basedate = datetime(year=2016, month=1, day=1)
 
+    # 将 时间差值 转成 datatime
     def launch2date(launch):
         time_parts = [int(x) for x in launch.split(':')]
         delta = timedelta(days=time_parts[0], hours=time_parts[1], minutes=time_parts[2], seconds=time_parts[3])
@@ -39,6 +43,7 @@ def convert_gsdtsr(filename):
 
     tc_fieldnames = ['Id', 'Name', 'Duration', 'CalcPrio', 'LastRun', 'LastResults', 'Verdict', 'Cycle']
 
+    # 创建新的 DataFrame 用于存储转换后的数据
     tcdf = pd.DataFrame(columns=tc_fieldnames, index=reddf.index)
     tcdf['Id'] = reddf.index + 1
     tcdf['Name'] = reddf['name']
@@ -49,6 +54,7 @@ def convert_gsdtsr(filename):
 
     tcdf = tcdf.sort_values(by='LastRun')
 
+    # 将每个 测试用例 的 Verdict 存储在 LastResults 中
     print('Collect historical test results (this takes some time)...')
     no_tcs = len(tcdf.Name.unique())
     for tccount, name in enumerate(tcdf.Name.unique(), start=1):
