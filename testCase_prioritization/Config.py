@@ -18,7 +18,7 @@ class Config:
         self.experience_replay = False
         # 训练的起始周期数
         self.first_cycle = 1
-        # 周期总数
+        # 周期总数,默认训练中 end 是第100个周期
         self.cycle_count = 100
         # 数据集
         self.train_data = "../data/tc_data_paintcontrol.csv"

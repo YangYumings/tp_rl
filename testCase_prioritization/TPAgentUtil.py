@@ -5,17 +5,40 @@ import numpy as np
 
 from PairWiseEnv import CIPairWiseEnv
 
+# 代理工具，用于评估在测试用例排序中所有强化学习的表现
+# 1.创建强化学习模型
+# 2.加载训练过的强化学习模型
+# 3.测试智能体性能，在指定环境中评估已训练的智能体
+
 
 class TPAgentUtil:
     #supported_algo = ['DQN', 'PPO2', "A2C", "ACER", "ACKTR", "HER", "PPO1", "TRPO"]
     supported_algo = ['DQN', 'PPO2', "A2C", "ACKTR", "DDPG", "ACER", "GAIL", "HER", "PPO1", "SAC", "TD3", "TRPO"]
 
     def create_model(algo, env):
-        assert TPAgentUtil.supported_algo.count(algo.upper()) == 1, "The algorithms  is not supported for" \
+        # count 是统计其在列表中出现的次数
+        assert TPAgentUtil.supported_algo.count(algo.upper()) == 1, "The algorithms is not supported for" \
                                                                     " pairwise formalization"
         if algo.upper() == "DQN":
             from stable_baselines import DQN
+            # 2 层隐藏层，每层64个神经元，用于 Q 网络
             from stable_baselines.deepq.policies import MlpPolicy
+            '''
+            参数：
+            MlpPolicy:多层感知机，用于根据状态计算动作价值 Q(s,a)
+            gamma:折扣因子，控制长期汇报的重要性
+            learning_rate：学习率
+            buffer_size: 经验缓冲区大小
+            exploration_fraction：1标识全称使用探索衰减策略
+            exploration_initial_eps：探索起始 ε 值（随机行为比例）
+            exploration_final_eps：探索结束 ε 值（最终收敛到较小的随机性）
+            train_freq：每几步更新一次网络
+            batch_size：每次更新网络从 buffer 中抽取的样本数量
+            double_q：Double Q，缓解 Q值过估计问题
+            learning_starts:从第几步开始学习
+            target_network_update_freq：网络更新频率
+            prioritized_replay：是否使用经验回放
+            '''
             model = DQN(MlpPolicy, env, gamma=0.90, learning_rate=0.0005, buffer_size=10000,
                         exploration_fraction=1, exploration_final_eps=0.02, exploration_initial_eps=1.0,
                         train_freq=1, batch_size=32, double_q=True, learning_starts=1000,
